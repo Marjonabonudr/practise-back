@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { Company } = require('../models');
-const { companySchema } = require('../validation/company.Validation');
+const { companySchema } = require('../validation/Company.Validation');
 
 exports.createCompany = async (req, res) => {
     const { error } = companySchema.validate(req.body);
