@@ -5,6 +5,9 @@ const sequelize = require('./config/database');
 const setupSwagger = require('./swagger/swagger');
 const initCronJobs = require('./utils/cronScheduler');
 
+const { cleanBodyText} = require('./middlewares/security')
+const errorHandler = require('./middlewares/errorHandle');
+
 // Render (Linux) uchun barcha import yo'llari va fayl kengaytmalari kichik harfli fayllarga moslandi
 const User = require('./routes/User.Route.js');
 const AuditLog = require('./routes/AuditLog.Route.js');
@@ -26,6 +29,8 @@ app.use(
     })
 );
 
+app.use(cleanBodyText); // TZ: Xavfsizlik uchun barcha so'rovlarni tozalash middleware qo'shildi
+
 app.use('/api', User);
 app.use('/api', AuditLog);
 app.use('/api', Company);
@@ -37,6 +42,8 @@ app.use('/api', Notification);
 app.use('/api', require('./routes/Dashboard.Route.js'));
 
 setupSwagger(app);
+
+app.use(errorHandler); // TZ: Xatoliklarni boshqarish middleware qo'shildi
 
 const PORT = process.env.PORT || 3000;
 
