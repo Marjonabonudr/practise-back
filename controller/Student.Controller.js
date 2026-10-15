@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { Student, User, Placement } = require('../models');
-const { studentSchema } = require('../validation/student.Validation');
+const { studentSchema } = require('../validation/Student.Validation');
 
 exports.createStudent = async (req, res) => {
     const { error } = studentSchema.validate(req.body);

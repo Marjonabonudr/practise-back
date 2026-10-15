@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { Placement, AuditLog, Student, Company } = require('../models');
-const validatePlacement = require('../validation/placement.Validation');
+const validatePlacement = require('../validation/Placement.Validation');
 
 exports.createPlacement = async (req, res) => {
     const { error } = validatePlacement(req.body);

@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { WeeklyReport } = require('../models');
-const validateWeeklyReport = require('../validation/weeklyReport.Validation');
+const validateWeeklyReport = require('../validation/WeeklyReport.Validation');
 
 exports.createWeeklyReport = async (req, res) => {
     const { error } = validateWeeklyReport(req.body);
