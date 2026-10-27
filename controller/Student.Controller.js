@@ -3,13 +3,21 @@ const { Student, User, Placement } = require('../models');
 const { studentSchema } = require('../validation/Student.Validation');
 
 exports.createStudent = async (req, res) => {
+    // 1. Frontend'dan kelayotgan ma'lumotlarni terminalda ko'ramiz
+    console.log("FRONT'DAN KELGAN REQ.BODY:", req.body);
+
     const { error } = studentSchema.validate(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) {
+        console.log("VALIDATSIYA XATOSI:", error.details[0].message);
+        return res.status(400).send(error.details[0].message);
+    }
 
     try {
         const student = await Student.create(req.body);
         res.status(201).send(student);
     } catch (error) {
+        // 2. Bazani saqlashdagi real xatoni terminalga chiqaramiz
+        console.error("BAZAGA SAQLash XATOSI (500):", error);
         res.status(500).send(error.message);
     }
 };

@@ -29,7 +29,8 @@ app.use(
     })
 );
 
-app.use(cleanBodyText); // TZ: Xavfsizlik uchun barcha so'rovlarni tozalash middleware qo'shildi
+// app.use(cleanBodyText); 
+// TZ: Xavfsizlik uchun barcha so'rovlarni tozalash middleware qo'shildi
 
 app.use('/api', User);
 app.use('/api', AuditLog);
