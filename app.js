@@ -40,7 +40,7 @@ app.use('/api', Student);
 app.use('/api', WorkLog);
 app.use('/api', WeeklyReport);
 app.use('/api', Notification);
-app.use('/api', require('./routes/Dashboard.Route.js'));
+app.use('/api/dashboard', require('./routes/Dashboard.Route.js'));
 
 setupSwagger(app);
 
