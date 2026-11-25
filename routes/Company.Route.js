@@ -1,163 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const companyController = require('../controller/Company.Controller');
-
-/**
- * @swagger
- * tags:
- *   name: Company
- *   description: Hamkor kompaniyalarni boshqarish paneli
- */
-
-/**
- * @swagger
- * /api/companies:
- *   post:
- *     tags: [Company]
- *     summary: Yangi hamkor kompaniya qo'shish
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - field
- *               - address
- *               - contact
- *             properties:
- *               name:
- *                 type: string
- *                 example: Najot Ta'lim MCHJ
- *               field:
- *                 type: string
- *                 example: Axborot Texnologiyalari
- *               address:
- *                 type: string
- *                 example: Toshkent sh., Chilonzor 9-kvartal
- *               contact:
- *                 type: string
- *                 example: "+998712001122"
- *     responses:
- *       '201':
- *         description: Kompaniya muvaffaqiyatli qo'shildi
- *       '400':
- *         description: Ma'lumotlar to'liq emas
- *       '500':
- *         description: Server xatosi
- */
-router.post('/companies', companyController.createCompany);
+const c = require('../controller/Company.Controller');
+const { protect, authorize } = require('../middlewares/auth');
+const { uuidParam } = require('../middlewares/access');
+router.param('id', uuidParam);
+router.use('/companies', protect, authorize('coordinator'));
 
 /**
  * @swagger
  * /api/companies:
- *   get:
- *     tags: [Company]
- *     summary: Barcha faol hamkor kompaniyalar ro'yxatini yuklash
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       '200':
- *         description: Ro'yxat yuklandi
- *       '500':
- *         description: Server xatosi
- */
-router.get('/companies', companyController.getCompanies);
-
-/**
- * @swagger
+ *   get: { tags: [Company], summary: "Kompaniyalar (?status=active|archive|all&search=)", security: [{ bearerAuth: [] }], responses: { '200': { description: OK } } }
+ *   post: { tags: [Company], summary: Yangi kompaniya, security: [{ bearerAuth: [] }], responses: { '201': { description: OK } } }
  * /api/companies/{id}:
- *   get:
- *     tags: [Company]
- *     summary: ID bo'yicha kompaniya kartochkasi va tafsilotlari
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *           format: uuid
- *         required: true
- *     responses:
- *       '200':
- *         description: Kompaniya tafsilotlari
- *       '404':
- *         description: Kompaniya topilmadi
- *       '500':
- *         description: Server xatosi
+ *   get: { tags: [Company], summary: "Kompaniya kartochkasi", security: [{ bearerAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { '200': { description: OK } } }
+ *   put: { tags: [Company], summary: Yangilash yoki arxivlash, security: [{ bearerAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { '200': { description: OK } } }
+ *   delete: { tags: [Company], summary: Arxivlash (tarix saqlanadi), security: [{ bearerAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { '200': { description: OK } } }
  */
-router.get('/companies/:id', companyController.getCompanyById);
-
-/**
- * @swagger
- * /api/companies/{id}:
- *   put:
- *     tags: [Company]
- *     summary: Kompaniya ma'lumotlarini yangilash yoki arxivlash
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *           format: uuid
- *         required: true
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               field:
- *                 type: string
- *               address:
- *                 type: string
- *               contact:
- *                 type: string
- *               status:
- *                 type: string
- *                 enum: [active, archive]
- *     responses:
- *       '200':
- *         description: Ma'lumotlar yangilandi
- *       '404':
- *         description: Kompaniya topilmadi
- *       '500':
- *         description: Server xatosi
- */
-router.put('/companies/:id', companyController.updateCompany);
-
-/**
- * @swagger
- * /api/companies/{id}:
- *   delete:
- *     tags: [Company]
- *     summary: Kompaniyani bazadan o'chirish
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *           format: uuid
- *         required: true
- *     responses:
- *       '200':
- *         description: Kompaniya muvaffaqiyatli o'chirildi
- *       '404':
- *         description: Kompaniya topilmadi
- *       '500':
- *         description: Server xatosi
- */
-router.delete('/companies/:id', companyController.deleteCompany);
-
+router.post('/companies', c.createCompany);
+router.get('/companies', c.getCompanies);
+router.get('/companies/:id', c.getCompanyById);
+router.put('/companies/:id', c.updateCompany);
+router.delete('/companies/:id', c.deleteCompany);
 module.exports = router;

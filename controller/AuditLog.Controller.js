@@ -1,14 +1,14 @@
-const { Op } = require('sequelize');
-const { AuditLog } = require('../models');
+const { AuditLog, User } = require('../models');
+const H = require('../utils/helpers');
 
 exports.getAuditLogs = async (req, res) => {
-    try {
-        // Faqat koordinator tizim audit tarixini o'qiydi
-        const logs = await AuditLog.findAll({
-            order: [['createdAt', 'DESC']]
-        });
-        res.status(200).send(logs);
-    } catch (error) {
-        res.status(500).send(error.message);
-    }
+  const where = {};
+  if (req.query.action) where.action = String(req.query.action).slice(0, 80);
+  if (H.isUuid(req.query.userId)) where.userId = req.query.userId;
+  const { page, limit, offset } = H.paging(req.query, 50);
+  const { count, rows } = await AuditLog.findAndCountAll({
+    where, limit, offset, order: [['createdAt', 'DESC']],
+    include: [{ model: User, as: 'user', attributes: ['id', 'email', 'fullName', 'role'] }],
+  });
+  H.ok(res, rows, 200, H.meta(count, page, limit));
 };

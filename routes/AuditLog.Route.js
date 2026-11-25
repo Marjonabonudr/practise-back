@@ -1,32 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const auditLogController = require('../controller/AuditLog.Controller');
-
-/**
- * @swagger
- * tags:
- *   name: AuditLog
- *   description: Tizim xavfsizligi va muhim o'zgarishlar tarixi loglari (Faqat Koordinator uchun)
- */
+const c = require('../controller/AuditLog.Controller');
+const { protect, authorize } = require('../middlewares/auth');
 
 /**
  * @swagger
  * /api/audit-logs:
- *   get:
- *     tags: [AuditLog]
- *     summary: Kim, qachon, qaysi obyektni nima sababdan o'zgartirganligi to'liq tarixini yuklash
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       '200':
- *         description: Tizim amallar tarixi muvaffaqiyatli yuklandi
- *       '401':
- *         description: Token xatosi
- *       '403':
- *         description: Ushbu loglarni ko'rish huquqi sizda yo'q
- *       '500':
- *         description: Server xatosi
+ *   get: { tags: [AuditLog], summary: "Koordinator: kim, qachon, nimani, nima sababdan o'zgartirgan", security: [{ bearerAuth: [] }], responses: { '200': { description: OK } } }
  */
-router.get('/audit-logs', auditLogController.getAuditLogs);
-
+router.get('/audit-logs', protect, authorize('coordinator'), c.getAuditLogs);
 module.exports = router;

@@ -1,120 +1,55 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controller/User.Controller');
-
-/**
- * @swagger
- * tags:
- *   name: User 
- *   description: Foydalanuvchilar va akkauntlarni boshqarish tizimi
- */
-
-/**
- * @swagger
- * /api/users/invite:
- *   post:
- *     tags: [User]
- *     summary: Koordinator tomonidan amaliyotchi yoki mentor uchun 72 soatlik taklif havolasi yaratish
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - role
- *             properties:
- *               email:
- *                 type: string
- *                 example: mentor@company.com
- *               role:
- *                 type: string
- *                 enum: [intern, mentor]
- *                 example: mentor
- *     responses:
- *       '200':
- *         description: Bir martalik taklif havolasi muvaffaqiyatli yaratildi
- *       '400':
- *         description: Noto'g'ri ma'lumotlar kiritildi
- *       '401':
- *         description: Avtorizatsiya xatosi
- *       '403':
- *         description: Huquq yetarli emas (Faqat koordinator uchun)
- *       '500':
- *         description: Server xatosi
- */
-router.post('/users/invite', userController.createInviteLink);
-
-/**
- * @swagger
- * /api/users/register:
- *   post:
- *     tags: [User]
- *     summary: Taklif havolasi orqali tizimda yangi akkaunt ro'yxatdan o'tkazish
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *               - role
- *             properties:
- *               email:
- *                 type: string
- *                 example: student@algoritm.uz
- *               password:
- *                 type: string
- *                 example: securePassword123
- *               role:
- *                 type: string
- *                 enum: [coordinator, intern, mentor]
- *                 example: intern
- *     responses:
- *       '201':
- *         description: Foydalanuvchi muvaffaqiyatli ro'yxatdan o'tdi
- *       '400':
- *         description: Email band yoki validatsiya xatosi
- *       '500':
- *         description: Server xatosi
- */
-router.post('/users/register', userController.registerUser);
+const c = require('../controller/User.Controller');
+const { protect, authorize } = require('../middlewares/auth');
+const { loginLimiter } = require('../middlewares/security');
+const { uuidParam } = require('../middlewares/access');
+router.param('id', uuidParam);
 
 /**
  * @swagger
  * /api/users/login:
  *   post:
  *     tags: [User]
- *     summary: Tizimga email va parol orqali kirish (JWT token olish)
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 example: coordinator@algoritm.uz
- *               password:
- *                 type: string
- *                 example: password123
- *     responses:
- *       '200':
- *         description: Tizimga muvaffaqiyatli kirildi va token berildi
- *       '401':
- *         description: Email yoki parol noto'g'ri, yoki akkaunt faolsizlantirilgan
- *       '500':
- *         description: Server xatosi
+ *     summary: Email va parol bilan kirish (JWT)
+ *     security: []
+ *     responses: { '200': { description: "{ token, role, id, email }" }, '401': { description: Noto'g'ri ma'lumot } }
+ * /api/users/register:
+ *   post:
+ *     tags: [User]
+ *     summary: Taklif havolasi tokeni orqali parol o'rnatish va akkaunt yaratish (ochiq ro'yxatdan o'tish yo'q)
+ *     security: []
+ *     responses: { '201': { description: Yaratildi }, '400': { description: Token yaroqsiz } }
+ * /api/users/invite:
+ *   post:
+ *     tags: [User]
+ *     summary: "Koordinator: 72 soatlik taklif (intern: studentId, mentor: companyId, fullName, email)"
+ *     security: [{ bearerAuth: [] }]
+ *     responses: { '200': { description: inviteLink } }
+ * /api/users/me:
+ *   get:
+ *     tags: [User]
+ *     summary: Joriy foydalanuvchi
+ *     security: [{ bearerAuth: [] }]
+ *     responses: { '200': { description: OK } }
+ * /api/users:
+ *   get:
+ *     tags: [User]
+ *     summary: "Koordinator: foydalanuvchilar ro'yxati (?role=mentor&companyId=...)"
+ *     security: [{ bearerAuth: [] }]
+ *     responses: { '200': { description: OK } }
+ * /api/users/{id}/status:
+ *   put:
+ *     tags: [User]
+ *     summary: "Koordinator: akkauntni faolsizlantirish/faollashtirish (sabab majburiy)"
+ *     security: [{ bearerAuth: [] }]
+ *     parameters: [{ in: path, name: id, required: true, schema: { type: string, format: uuid } }]
+ *     responses: { '200': { description: OK } }
  */
-router.post('/users/login', userController.loginUser);
-
+router.post('/users/login', loginLimiter, c.loginUser);
+router.post('/users/register', loginLimiter, c.registerUser);
+router.post('/users/invite', protect, authorize('coordinator'), c.createInviteLink);
+router.get('/users/me', protect, c.me);
+router.get('/users', protect, authorize('coordinator'), c.listUsers);
+router.put('/users/:id/status', protect, authorize('coordinator'), c.setUserStatus);
 module.exports = router;

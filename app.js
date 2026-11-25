@@ -17,6 +17,7 @@ const Student = require('./routes/Student.Route.js');
 const WorkLog = require('./routes/WorkLog.Route.js');
 const WeeklyReport = require('./routes/WeeklyReport.Route.js');
 const Notification = require('./routes/Notification.Route.js');
+const ActionItem = require('./routes/ActionItem.Route.js');
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use(
 // TZ: Xavfsizlik uchun barcha so'rovlarni tozalash middleware qo'shildi
 
 app.use('/api', User);
+app.use('/api', ActionItem);
 app.use('/api', AuditLog);
 app.use('/api', Company);
 app.use('/api', Placement);

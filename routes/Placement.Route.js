@@ -1,128 +1,32 @@
 const express = require('express');
 const router = express.Router();
-const placementController = require('../controller/Placement.Controller');
-
-/**
- * @swagger
- * tags:
- *   name: Placement
- *   description: O'quvchilarni kompaniyalarga amaliyotga joylashtirish shartnomalari
- */
-
-/**
- * @swagger
- * /api/placements:
- *   post:
- *     tags: [Placement]
- *     summary: O'quvchini kompaniyaga va mentorga biriktirib, yangi amaliyot shartnomasi yaratish
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - studentId
- *               - companyId
- *               - mentorId
- *               - startDate
- *               - endDate
- *               - plannedHours
- *               - goals
- *             properties:
- *               studentId:
- *                 type: string
- *                 format: uuid
- *               companyId:
- *                 type: string
- *                 format: uuid
- *               mentorId:
- *                 type: string
- *                 format: uuid
- *               startDate:
- *                 type: string
- *                 format: date
- *                 example: "2026-10-15"
- *               endDate:
- *                 type: string
- *                 format: date
- *                 example: "2027-01-15"
- *               plannedHours:
- *                 type: number
- *                 example: 160
- *               goals:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["REST API qurish", "Baza optimizatsiyasi", "Swagger yozish"]
- *     responses:
- *       '201':
- *         description: Amaliyot muvaffaqiyatli boshlandi
- *       '400':
- *         description: Talabada ayni vaqtda faol amaliyot bor (Dublikat taqiqlanadi)
- *       '500':
- *         description: Server xatosi
- */
-router.post('/placements', placementController.createPlacement);
+const c = require('../controller/Placement.Controller');
+const { protect, authorize } = require('../middlewares/auth');
+const { uuidParam } = require('../middlewares/access');
+router.param('id', uuidParam);
+router.use('/placements', protect);
 
 /**
  * @swagger
  * /api/placements:
- *   get:
- *     tags: [Placement]
- *     summary: Barcha joylashtirishlar tarixi va joriy holatlarini ko'rish
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       '200':
- *         description: Ro'yxat muvaffaqiyatli yuklandi
- *       '500':
- *         description: Server xatosi
- */
-router.get('/placements', placementController.getPlacements);
-
-/**
- * @swagger
+ *   post: { tags: [Placement], summary: "Koordinator: studentId, companyId, mentorId, startDate, endDate, workDays[1-7], dailyHours, goals[3-5] (reja soati jadvaldan hisoblanadi)", security: [{ bearerAuth: [] }], responses: { '201': { description: OK } } }
+ *   get: { tags: [Placement], summary: "Rol bo'yicha cheklangan ro'yxat", security: [{ bearerAuth: [] }], responses: { '200': { description: OK } } }
+ * /api/placements/{id}:
+ *   get: { tags: [Placement], summary: Bitta amaliyot (ruxsat tekshiriladi), security: [{ bearerAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { '200': { description: OK } } }
  * /api/placements/{id}/status:
- *   put:
- *     tags: [Placement]
- *     summary: Amaliyot holatini o'zgartirish (Davom etmoqda, Vaqtincha to'xtatildi, Erta yopildi, Yakunlandi)
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *           format: uuid
- *         required: true
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - status
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [placed, ongoing, paused, terminated, completed]
- *               reason:
- *                 type: string
- *                 example: "Sog'ligi sababli vaqtincha to'xtatildi"
- *     responses:
- *       '200':
- *         description: Status o'zgardi va AuditLog tarixiga yozildi
- *       '400':
- *         description: To'xtatish yoki erta tugatishda sabab (reason) yozilmadi
- *       '404':
- *         description: Amaliyot shartnomasi topilmadi
- *       '500':
- *         description: Server xatosi
+ *   put: { tags: [Placement], summary: "Koordinator: holat o'tishlari (sabab/xulosa qoidalari bilan)", security: [{ bearerAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { '200': { description: OK } } }
+ * /api/placements/{id}/hiring:
+ *   put: { tags: [Placement], summary: "Koordinator: ishga olish natijasi", security: [{ bearerAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { '200': { description: OK } } }
+ * /api/placements/{id}/mentor:
+ *   put: { tags: [Placement], summary: "Koordinator: mentor almashtirish (sabab majburiy)", security: [{ bearerAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { '200': { description: OK } } }
+ * /api/placements/{id}/final-assessment:
+ *   put: { tags: [Placement], summary: "Mentor: yakuniy baholash", security: [{ bearerAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { '200': { description: OK } } }
  */
-router.put('/placements/:id/status', placementController.updatePlacementStatus);
-
+router.post('/placements', authorize('coordinator'), c.createPlacement);
+router.get('/placements', c.getPlacements);
+router.get('/placements/:id', c.getPlacementById);
+router.put('/placements/:id/status', authorize('coordinator'), c.updatePlacementStatus);
+router.put('/placements/:id/hiring', authorize('coordinator'), c.updateHiring);
+router.put('/placements/:id/mentor', authorize('coordinator'), c.changeMentor);
+router.put('/placements/:id/final-assessment', authorize('mentor'), c.setFinalAssessment);
 module.exports = router;

@@ -1,61 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const dashboardController = require('../controller/Dashboard.Controller');
+const c = require('../controller/Dashboard.Controller');
 const { protect, authorize } = require('../middlewares/auth');
-
-/**
- * @swagger
- * tags:
- *   name: Dashboard
- *   description: Koordinatorlar uchun tahliliy hisobotlar va eksport
- */
+// app.js da '/api/dashboard' ostida ulanadi => manzillar: /api/dashboard/stats, /table, /export
+router.use(protect, authorize('coordinator'));
 
 /**
  * @swagger
  * /api/dashboard/stats:
- *   get:
- *     tags: [Dashboard]
- *     summary: Dashboard uchun asosiy raqamli statistikalarni olish
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       '200':
- *         description: Statistika muvaffaqiyatli hisoblandi
- *       '500':
- *         description: Server xatosi
- */
-router.get('/dashboard/stats', protect, authorize('coordinator'), dashboardController.getDashboardStats);
-
-/**
- * @swagger
+ *   get: { tags: [Dashboard], summary: Dashboard raqamlari, security: [{ bearerAuth: [] }], responses: { '200': { description: OK } } }
  * /api/dashboard/table:
- *   get:
- *     tags: [Dashboard]
- *     summary: Filtrlash va sahifalash bilan koordinator bosh jadvalini yuklash
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       '200':
- *         description: Jadval ma'lumotlari yuklandi
- *       '500':
- *         description: Server xatosi
- */
-router.get('/dashboard/table', protect, authorize('coordinator'), dashboardController.getDashboardTable);
-
-/**
- * @swagger
+ *   get: { tags: [Dashboard], summary: "Asosiy jadval (?search=&companyId=&mentorId=&field=&status=&hiringStatus=&dateFrom=&dateTo=&page=&limit=25|50)", security: [{ bearerAuth: [] }], responses: { '200': { description: OK } } }
  * /api/dashboard/export:
- *   get:
- *     tags: [Dashboard]
- *     summary: Amaliyot hisobotlarini UTF-8 CSV formatida yuklab olish
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       '200':
- *         description: CSV fayl muvaffaqiyatli generatsiya qilindi
- *       '500':
- *         description: Server xatosi
+ *   get: { tags: [Dashboard], summary: "UTF-8 CSV (jadvaldagi filtrlar bilan bir xil)", security: [{ bearerAuth: [] }], responses: { '200': { description: CSV } } }
  */
-router.get('/dashboard/export', protect, authorize('coordinator'), dashboardController.exportToCSV);
-
+router.get('/stats', c.getDashboardStats);
+router.get('/table', c.getDashboardTable);
+router.get('/export', c.exportToCSV);
 module.exports = router;
